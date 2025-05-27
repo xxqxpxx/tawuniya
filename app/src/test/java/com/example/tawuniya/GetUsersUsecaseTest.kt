@@ -10,6 +10,8 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -35,9 +37,10 @@ class GetUsersUseCaseTest {
             User(1, "User 1", "user1", "user1@example.com", "123", "website1.com"),
             User(2, "User 2", "user2", "user2@example.com", "456", "website2.com")
         )
-        coEvery { userRepository.getUsers() } returns expectedUsers
 
-        val actualUsers = getUsersUseCase()
+        coEvery { userRepository.getUsers() } returns flowOf(expectedUsers)
+
+        val actualUsers = getUsersUseCase().first()
 
         assertEquals(expectedUsers, actualUsers)
     }

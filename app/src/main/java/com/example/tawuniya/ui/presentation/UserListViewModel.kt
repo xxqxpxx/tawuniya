@@ -38,9 +38,10 @@ class UserListViewModel @Inject constructor(
                     _uiState.update { it.copy(users = userList) }
                 }
             } catch (e: Exception) {
-                _uiState.update {
+              /*  _uiState.update {
                     it.copy(error = "Error retrieving users: ${e.localizedMessage}")
-                }
+                }*/
+
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -57,7 +58,7 @@ class UserListViewModel @Inject constructor(
     private fun collectLikedUsers() {
         viewModelScope.launch {
             getLikedUsersUseCase().collectLatest { likedUserList ->
-                _uiState.update { it.copy(likedUsers = likedUserList) }
+                _uiState.update { it.copy(users = likedUserList) }
             }
         }
     }
