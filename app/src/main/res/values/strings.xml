@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">tawuniya</string>
+    <string name="users_list">Users list</string>
+    <string name="error">Error: %1$s</string>
+    <string name="no_users_found">No users found.</string>
+    <string name="like_button">like button</string>
+</resources>
