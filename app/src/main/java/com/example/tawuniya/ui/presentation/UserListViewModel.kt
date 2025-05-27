@@ -7,7 +7,11 @@ import com.example.tawuniya.domain.usecase.GetLikedUsersUseCase
 import com.example.tawuniya.domain.usecase.GetUsersUseCase
 import com.example.tawuniya.domain.usecase.SaveLikedUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,8 +34,9 @@ class UserListViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val userList = getUsersUseCase()
-                _uiState.update { it.copy(users = userList) }
+                getUsersUseCase().collect { userList ->
+                    _uiState.update { it.copy(users = userList) }
+                }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(error = "Error retrieving users: ${e.localizedMessage}")
@@ -41,6 +46,7 @@ class UserListViewModel @Inject constructor(
             }
         }
     }
+
 
     fun onLikeUser(user: User) {
         viewModelScope.launch {
