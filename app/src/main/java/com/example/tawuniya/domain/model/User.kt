@@ -6,5 +6,6 @@ data class User(
     val username: String,
     val email: String,
     val phone: String,
-    val website: String
+    val website: String,
+    val isLiked: Boolean = false
 )

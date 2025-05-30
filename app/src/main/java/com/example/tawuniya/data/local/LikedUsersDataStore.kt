@@ -33,6 +33,16 @@ class LikedUsersDataStore @Inject constructor(
         }
     }
 
+    suspend fun removeLikedUser(user: User) {
+        context.dataStore.edit { preferences ->
+            val currentLikedUsersJson = preferences[LIKED_USERS_KEY] ?: "[]"
+            val type = object : TypeToken<MutableList<User>>() {}.type
+            val likedUsers: MutableList<User> = gson.fromJson(currentLikedUsersJson, type)
+            likedUsers.removeAll { it.id == user.id }
+            preferences[LIKED_USERS_KEY] = gson.toJson(likedUsers)
+        }
+    }
+
     fun getLikedUsers(): Flow<List<User>> {
         return context.dataStore.data.map { preferences ->
             val likedUsersJson = preferences[LIKED_USERS_KEY] ?: "[]"

@@ -63,7 +63,7 @@ fun UserListScreen(
                         items(state.users) { user ->
                             UserCard(
                                 user = user,
-                                isLiked = state.likedUsers.any { it.id == user.id },
+                                isLiked = user.isLiked,
                                 onLikeClick = { viewModel.onLikeUser(user) }
                             )
                         }

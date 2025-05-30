@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.tawuniya.domain.model.User
 import com.example.tawuniya.domain.usecase.GetLikedUsersUseCase
 import com.example.tawuniya.domain.usecase.GetUsersUseCase
+import com.example.tawuniya.domain.usecase.RemoveLikedUserUseCase
 import com.example.tawuniya.domain.usecase.SaveLikedUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,6 +21,7 @@ import javax.inject.Inject
 class UserListViewModel @Inject constructor(
     private val getUsersUseCase: GetUsersUseCase,
     private val saveLikedUserUseCase: SaveLikedUserUseCase,
+    private val removeLikedUserUseCase: RemoveLikedUserUseCase,
     private val getLikedUsersUseCase: GetLikedUsersUseCase
 ) : ViewModel() {
 
@@ -27,43 +30,59 @@ class UserListViewModel @Inject constructor(
 
     init {
         getUsers()
-        collectLikedUsers()
     }
 
     private fun getUsers() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            try {
-                getUsersUseCase().collect { userList ->
-                    _uiState.update { it.copy(users = userList) }
+            
+            getUsersUseCase()
+                .catch { exception ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = "Error retrieving users: ${exception.localizedMessage}"
+                        )
+                    }
                 }
-            } catch (e: Exception) {
-              /*  _uiState.update {
-                    it.copy(error = "Error retrieving users: ${e.localizedMessage}")
-                }*/
-
-            } finally {
-                _uiState.update { it.copy(isLoading = false) }
-            }
+                .collect { userList ->
+                    _uiState.update {
+                        it.copy(
+                            users = userList,
+                            isLoading = false,
+                            error = null
+                        )
+                    }
+                }
         }
     }
-
 
     fun onLikeUser(user: User) {
         viewModelScope.launch {
-            saveLikedUserUseCase(user)
-        }
-    }
-
-    private fun collectLikedUsers() {
-        viewModelScope.launch {
-            getLikedUsersUseCase().collectLatest { likedUserList ->
-                _uiState.update { it.copy(users = likedUserList) }
+            if (user.isLiked) {
+                // Unlike the user
+                removeLikedUserUseCase(user)
+            } else {
+                // Like the user
+                saveLikedUserUseCase(user.copy(isLiked = true))
+            }
+            
+            // Update the UI state immediately for better user experience
+            _uiState.update { currentState ->
+                currentState.copy(
+                    users = currentState.users.map { stateUser ->
+                        if (stateUser.id == user.id) {
+                            stateUser.copy(isLiked = !stateUser.isLiked)
+                        } else {
+                            stateUser
+                        }
+                    }
+                )
             }
         }
     }
 
-    fun isUserLiked(user: User): Boolean {
-        return _uiState.value.likedUsers.any { it.id == user.id }
+    fun refreshUsers() {
+        getUsers()
     }
 }
